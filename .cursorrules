@@ -1,0 +1,183 @@
+{
+  "version": "1.0.0",
+  "description": "EasyTo uygulaması için geliştirme kuralları ve en iyi pratikler.",
+  "language": "tr",
+  "targetPlatform": "React Native (iOS & Android)",
+  "aiPreferences": {
+    "codingStyle": "Profesyonel, okunabilir, sürdürülebilir ve yüksek performanslı.",
+    "proactiveSuggestions": true,
+    "detailLevel": "Kapsamlı ancak öz",
+    "decisionMaking": "En iyi pratiklere ve tanımlanmış kurallara göre karar al, belirsizlik durumunda kullanıcıya danış. iOS ve Android için her iki platformda da eksiksiz çalışabilecek şekilde yazılmalıdır."
+  },
+  "guidelines": [
+    {
+      "id": "GL-ARCH-001",
+      "category": "Mimari",
+      "priority": "Yüksek",
+      "title": "MVVM Mimarisine Bağlılık",
+      "description": "Kod tabanı kesinlikle Model-View-ViewModel (MVVM) mimarisine uygun olarak yapılandırılmalıdır. View (Ekranlar), ViewModel (İş Mantığı ve Durum Yönetimi) ve Model (Veri ve Servisler) katmanları net bir şekilde ayrılmalıdır. ViewModel'lar View'dan bağımsız olmalı ve test edilebilirliği yüksek tutulmalıdır.",
+      "rules": [
+        "View'lar (React Component'ları) sadece UI renderlama ve kullanıcı etkileşimlerini ViewModel'a iletmekle sorumlu olmalıdır.",
+        "ViewModel'lar, View için gerekli veriyi ve komutları (fonksiyonlar) sağlamalı, iş mantığını içermeli ve Model katmanıyla etkileşim kurmalıdır.",
+        "Model katmanı, veri kaynakları (API, yerel veritabanı vb.) ve iş varlıklarını (data classes/interfaces) içermelidir.",
+        "Bağımlılıklar (Dependency Injection prensipleri) yönetilirken dikkatli olunmalı, ViewModel'lar test edilebilirlik için bağımlılıklarını constructor veya parametreler üzerinden almalıdır."
+      ]
+    },
+    {
+      "id": "GL-CODE-001",
+      "category": "Kod Kalitesi ve Stili",
+      "priority": "Yüksek",
+      "title": "Kod Okunabilirliği ve Tutarlılığı",
+      "description": "Yazılan tüm kodlar yüksek okunabilirliğe sahip, anlaşılır ve tutarlı olmalıdır. Proje genelinde belirlenen isimlendirme kurallarına ve formatlama standartlarına uyulmalıdır.",
+      "rules": [
+        "TypeScript etkin bir şekilde kullanılmalı, `any` tipinden mümkün olduğunca kaçınılmalı, bilinmeyen tipler için `unknown` tercih edilmeli ve tip güvenliği sağlanmalıdır.",
+        "Değişken, fonksiyon, sınıf ve component isimleri anlamlı ve kendini açıklayıcı olmalıdır (İngilizce isimlendirme tercih edilir).",
+        "Component'ler için PascalCase (örn: `UserProfileScreen`), fonksiyonlar ve değişkenler için camelCase (örn: `getUserProfile`) kullanılmalıdır.",
+        "ESLint ve Prettier gibi araçlarla kod formatlama ve stil denetimi otomatikleştirilmeli ve bu kurallara sıkı sıkıya uyulmalıdır.",
+        "Karmaşık mantık blokları için açıklayıcı yorum satırları eklenmeli, ancak kodun kendisi mümkün olduğunca kendini açıklamalıdır.",
+        "Sihirli sayılar (magic numbers) ve sihirli string'lerden (magic strings) kaçınılmalı, bunlar yerine anlamlı sabitler (constants) kullanılmalıdır."
+      ]
+    },
+    {
+      "id": "GL-CODE-002",
+      "category": "Kod Kalitesi ve Stili",
+      "priority": "Yüksek",
+      "title": "Modülerlik ve Yeniden Kullanılabilirlik",
+      "description": "Component'ler ve fonksiyonlar olabildiğince modüler ve yeniden kullanılabilir şekilde tasarlanmalıdır. DRY (Don't Repeat Yourself) prensibine uyulmalıdır.",
+      "rules": [
+        "Tek bir sorumluluğu olan küçük component'ler oluşturulmalıdır (Single Responsibility Principle).",
+        "Genel amaçlı yardımcı fonksiyonlar (utils) ve servisler ayrı modüllerde toplanmalıdır.",
+        "Tekrar eden UI desenleri ve mantıklar için soyutlamalar ve yeniden kullanılabilir component'ler oluşturulmalıdır."
+      ]
+    },
+    {
+      "id": "GL-PERF-001",
+      "category": "Performans",
+      "priority": "Yüksek",
+      "title": "Uygulama Performansı Optimizasyonu",
+      "description": "Milyonlarca kullanıcıya hizmet verecek bir uygulama için performans kritik öneme sahiptir. UI akıcılığı, hızlı yükleme süreleri ve verimli kaynak kullanımı hedeflenmelidir.",
+      "rules": [
+        "React.memo, useMemo, useCallback gibi React optimizasyon araçları bilinçli bir şekilde kullanılmalıdır.",
+        "Liste renderlamalarında `FlatList`, `SectionList` gibi optimize edilmiş component'ler tercih edilmeli ve `key` prop'u doğru şekilde kullanılmalıdır.",
+        "Gereksiz render'lardan kaçınılmalı, state güncellemeleri optimize edilmelidir.",
+        "API çağrıları optimize edilmeli; gereksiz veri transferinden kaçınılmalı, mümkün olan yerlerde caching mekanizmaları kullanılmalıdır.",
+        "Uygulama başlangıç süresi (TFI - Time to First Interaction) minimize edilmelidir.",
+        "Görsel varlıklar (resimler vb.) optimize edilmeli ve uygun formatlarda kullanılmalıdır.",
+        "Arka plan işlemleri ve animasyonlar ana thread'i bloke etmeyecek şekilde yönetilmelidir."
+      ]
+    },
+    {
+      "id": "GL-SEC-001",
+      "category": "Güvenlik",
+      "priority": "Kritik",
+      "title": "Uygulama Güvenliği",
+      "description": "Kullanıcı verilerinin gizliliği ve güvenliği en üst düzeyde tutulmalıdır. Uygulama, yaygın güvenlik açıklarına karşı korunmalıdır.",
+      "rules": [
+        "Tüm API iletişimleri HTTPS üzerinden yapılmalıdır.",
+        "Hassas veriler (token'lar, şifreler vb.) güvenli bir şekilde saklanmalıdır (örn: `react-native-keychain` kullanımı devam etmeli ve doğru implemente edilmelidir).",
+        "Kullanıcı girdileri hem istemci hem de sunucu tarafında (özellikle sunucu tarafında) doğrulanmalıdır.",
+        "Yetkilendirme ve kimlik doğrulama mekanizmaları sağlam olmalıdır.",
+        "Üçüncü parti kütüphanelerin güvenlik açıkları düzenli olarak kontrol edilmeli ve güncel tutulmalıdır.",
+        "Loglama yapılırken hassas bilgilerin loglara yazılmamasına dikkat edilmelidir."
+      ]
+    },
+    {
+      "id": "GL-TEST-001",
+      "category": "Test",
+      "priority": "Yüksek",
+      "title": "Kapsamlı Test Stratejisi",
+      "description": "Uygulamanın kararlılığı ve güvenilirliği için kapsamlı bir test stratejisi izlenmelidir.",
+      "rules": [
+        "ViewModel'lar ve iş mantığı içeren servisler için birim testleri (unit tests) yazılmalıdır (örn: Jest, React Testing Library).",
+        "React component'leri için component testleri yazılmalıdır.",
+        "Kritik kullanıcı akışları için entegrasyon testleri (integration tests) ve E2E (End-to-End) testleri planlanmalıdır.",
+        "Test kapsamı (test coverage) yüksek tutulmalı ve CI/CD süreçlerine entegre edilmelidir."
+      ]
+    },
+    {
+      "id": "GL-CICD-001",
+      "category": "CI/CD",
+      "priority": "Yüksek",
+      "title": "Sorunsuz CI/CD Süreçleri",
+      "description": "Sürekli entegrasyon ve sürekli dağıtım (CI/CD) süreçleri verimli ve sorunsuz çalışmalıdır.",
+      "rules": [
+        "Kod tabanı, CI/CD araçlarıyla (örn: GitHub Actions, GitLab CI, Jenkins, App Center) kolayca entegre olabilecek şekilde düzenlenmelidir.",
+        "Otomatik testler, build süreçleri ve dağıtımlar CI/CD pipeline'ına dahil edilmelidir.",
+        "Farklı ortamlar (geliştirme, test/staging, produksiyon) için yapılandırma yönetimi (environment configuration) etkin bir şekilde yapılmalıdır.",
+        "Sürüm yönetimi için semantik versiyonlama (Semantic Versioning - SemVer) kullanılmalıdır."
+      ]
+    },
+    {
+      "id": "GL-STATE-001",
+      "category": "Durum Yönetimi (State Management)",
+      "priority": "Yüksek",
+      "title": "Etkin Durum Yönetimi",
+      "description": "Uygulama genelinde durum yönetimi (state management) tutarlı ve verimli bir şekilde yapılmalıdır.",
+      "rules": [
+        "Lokal component state'leri için React'in kendi state mekanizmaları (`useState`, `useReducer`) kullanılmalıdır.",
+        "Global veya birden fazla component arasında paylaşılan karmaşık durumlar için uygun bir state management kütüphanesi (örn: Redux Toolkit, Zustand, Recoil) seçilmeli ve tutarlı bir şekilde kullanılmalıdır. Seçim, projenin ihtiyaçlarına göre yapılmalıdır.",
+        "Durum güncellemeleri öngörülebilir ve takip edilebilir olmalıdır."
+      ]
+    },
+    {
+      "id": "GL-API-001",
+      "category": "API Etkileşimi",
+      "priority": "Yüksek",
+      "title": "Verimli API Etkileşimi",
+      "description": "API ile iletişim verimli, tutarlı ve hataya dayanıklı olmalıdır.",
+      "rules": [
+        "API istemcisi (şu anki `apiClient.ts`) merkezi olmalı ve tüm API çağrıları buradan yönetilmelidir.",
+        "API hata yönetimi (error handling) standartlaştırılmalı ve kullanıcıya anlamlı geri bildirimler sunulmalıdır.",
+        "İstek ve yanıtlar için TypeScript arayüzleri (interfaces) tanımlanarak tip güvenliği sağlanmalıdır.",
+        "Gereksiz API çağrılarından kaçınılmalı, veri senkronizasyonu ve caching stratejileri değerlendirilmelidir."
+      ]
+    },
+    {
+      "id": "GL-I18N-001",
+      "category": "Uluslararasılaştırma (i18n)",
+      "priority": "Orta",
+      "title": "Uluslararasılaştırma Hazırlığı",
+      "description": "Uygulama, gelecekte farklı dillere ve bölgelere kolayca uyum sağlayabilecek şekilde tasarlanmalıdır.",
+      "rules": [
+        "Metinler (string'ler) doğrudan koda gömülmek yerine, i18n kütüphaneleri (örn: `i18next`, `react-i18next`) aracılığıyla yönetilmelidir.",
+        "Tarih, saat, sayı ve para birimi formatlamaları yerelleştirme (localization) dikkate alınarak yapılmalıdır."
+      ]
+    },
+    {
+      "id": "GL-A11Y-001",
+      "category": "Erişilebilirlik (a11y)",
+      "priority": "Orta",
+      "title": "Erişilebilirlik Standartları",
+      "description": "Uygulama, farklı yeteneklere sahip kullanıcılar tarafından erişilebilir olmalıdır.",
+      "rules": [
+        "React Native'in erişilebilirlik özelliklerinden (`accessibilityLabel`, `accessibilityHint`, `accessibilityRole` vb.) faydalanılmalıdır.",
+        "Renk kontrastları yeterli olmalı, yazı tipi boyutları ayarlanabilir olmalıdır.",
+        "Navigasyon klavye ve ekran okuyucularla uyumlu olmalıdır."
+      ]
+    },
+    {
+      "id": "GL-DEPS-001",
+      "category": "Bağımlılık Yönetimi",
+      "priority": "Yüksek",
+      "title": "Bağımlılık Yönetimi",
+      "description": "Üçüncü parti kütüphaneler dikkatli seçilmeli ve yönetilmelidir.",
+      "rules": [
+        "Yeni bir kütüphane eklenmeden önce kapsamlı bir değerlendirme yapılmalıdır (popülerlik, bakım durumu, güvenlik, performans etkisi).",
+        "Bağımlılıklar düzenli olarak güncellenmeli ve olası `breaking changes` için dikkatli olunmalıdır.",
+        "Kullanılmayan bağımlılıklar projeden çıkarılmalıdır."
+      ]
+    },
+    {
+      "id": "GL-DX-001",
+      "category": "Geliştirici Deneyimi (DX)",
+      "priority": "Orta",
+      "title": "İyi Geliştirici Deneyimi",
+      "description": "Kod tabanının bakımı ve geliştirilmesi kolay olmalıdır.",
+      "rules": [
+        "Proje yapısı anlaşılır ve iyi organize edilmiş olmalıdır.",
+        "Gerekli dokümantasyon (örn: README dosyaları, JSDoc/TSDoc) sağlanmalıdır.",
+        "Build ve geliştirme süreçleri hızlı ve verimli olmalıdır."
+      ]
+    }
+  ]
+} 
