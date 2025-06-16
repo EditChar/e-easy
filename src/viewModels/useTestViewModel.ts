@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { 
   fetchTestWithQuestionsAndAnswers, 
-  submitTestResponse, 
+  submitTestResponseEnhanced,
+  checkTestCompletion,
   TestDetails,
   Question,
   Answer
@@ -91,19 +92,27 @@ export const useTestViewModel = ({ testId }: UseTestViewModelProps) => {
         answer_id: parseInt(answerId.toString()),
       }));
       
-      const result = await submitTestResponse(Number(testId), responses);
+      const result = await submitTestResponseEnhanced(Number(testId), responses);
       setTestResult(result);
       
       Alert.alert(
         "Test Tamamlandı!",
-        `Puanınız: ${result.totalScore}\nTebrikler!`,
+        `Tebrikler!`,
         [{ text: "Tamam" }]
       );
       
       return result;
     } catch (err: any) {
       console.error("Testi gönderirken hata:", err);
-      Alert.alert("Hata", err.message || "Test sonuçları gönderilirken bir sorun oluştu.");
+      if (err.message === 'Bu test daha önce tamamlanmış.') {
+        Alert.alert(
+          "Test Zaten Tamamlanmış", 
+          "Bu test daha önce tamamlanmış. Ana ekrana dönülüyor.",
+          [{ text: "Tamam" }]
+        );
+      } else {
+        Alert.alert("Hata", err.message || "Test sonuçları gönderilirken bir sorun oluştu.");
+      }
       return null;
     } finally {
       setIsSubmitting(false);

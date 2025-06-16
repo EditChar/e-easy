@@ -11,16 +11,16 @@ interface SignUpViewModelProps {
 }
 
 export const useSignUpViewModel = ({ setIsAuthenticated }: SignUpViewModelProps) => {
-    const [formData, setFormData] = useState<SignUpData>({
-        username: '',
-        email: '',
-        password: '',
-        firstName: '',
-        lastName: '',
-        age: 0,
-        country: '',
-        gender: undefined,
-    });
+      const [formData, setFormData] = useState<SignUpData>({
+    username: '',
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    age: 0,
+    country: '',
+    gender: undefined,
+  });
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export const useSignUpViewModel = ({ setIsAuthenticated }: SignUpViewModelProps)
     };
 
     const handleSignUp = async (): Promise<boolean> => {
-        if (!formData.username || !formData.email || !formData.password || !formData.firstName || !formData.lastName || !countryValue || !formData.gender) {
+        if (!formData.username || !formData.email || !formData.password || !formData.first_name || !formData.last_name || !countryValue || !formData.gender) {
             setError('Lütfen tüm zorunlu alanları doldurun.');
             return false;
         }

@@ -106,14 +106,14 @@ const SignUpScreen = ({ setIsAuthenticated }: SignUpScreenProps) => {
       <TextInput
         style={styles.input}
         placeholder="İsim"
-        value={formData.firstName}
-        onChangeText={(text) => handleInputChange('firstName', text)}
+        value={formData.first_name}
+        onChangeText={(text) => handleInputChange('first_name', text)}
       />
       <TextInput
         style={styles.input}
         placeholder="Soyisim"
-        value={formData.lastName}
-        onChangeText={(text) => handleInputChange('lastName', text)}
+        value={formData.last_name}
+        onChangeText={(text) => handleInputChange('last_name', text)}
       />
       <TextInput
         style={styles.input}

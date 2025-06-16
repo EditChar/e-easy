@@ -4,7 +4,7 @@ import { getAccessToken, getRefreshToken, storeTokens, clearTokens } from '../ut
 import API_BASE_URL from '../config/apiConfig'; // API_BASE_URL'i apiConfig.ts'den import et
 import { AuthResponse, SignUpData, User, UserProfileUpdateData } from '../types/auth'; // AuthResponse ve SignUpData'yı import et
 import { Asset } from 'react-native-image-picker'; // Asset tipini import et
-import { TestResponse, TestResult, UserScore, UserRank, UserTestHistory, LeaderboardEntry } from '../types/auth'; // Test puanlama type'larını import et
+import { TestResponse, TestResult, UserScore, UserRank, UserTestHistory, MatchedUser } from '../types/auth'; // Test puanlama type'larını import et
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -216,18 +216,7 @@ export const getUserTestHistory = async (page: number = 1, limit: number = 10): 
   }
 };
 
-export const getLeaderboard = async (limit: number = 10): Promise<LeaderboardEntry[]> => {
-  try {
-    const response = await apiClient.get<LeaderboardEntry[]>(`/test-responses/leaderboard?limit=${limit}`);
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      return Promise.reject(error.response.data);
-    }
-    console.error("[API] Liderlik tablosu alınırken hata:", error);
-    return Promise.reject(error);
-  }
-};
+
 
 export const getTestResponseDetails = async (testResponseId: number): Promise<{
   testResponse: any;
@@ -373,6 +362,104 @@ export const getMe = async (): Promise<User> => {
         // Diğer beklenmedik hataları fırlat
         throw error;
     }
+};
+
+// Test tamamlama ve kontrol API'leri
+export const getAvailableTests = async () => {
+  try {
+    const response = await apiClient.get('/tests');
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return Promise.reject(error.response.data);
+    }
+    console.error("[API] Kullanılabilir testler alınırken hata:", error);
+    return Promise.reject(error);
+  }
+};
+
+export const checkTestCompletion = async (testId: number): Promise<{
+  completed: boolean;
+  completionData?: {
+    id: number;
+    test_score: number;
+    completed_at: string;
+  };
+}> => {
+  try {
+    const response = await apiClient.get(`/test-responses/check/${testId}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return Promise.reject(error.response.data);
+    }
+    console.error("[API] Test tamamlanma durumu kontrol edilirken hata:", error);
+    return Promise.reject(error);
+  }
+};
+
+export const getCompletedTests = async (page: number = 1, limit: number = 10): Promise<{
+  completedTests: Array<{
+    id: number;
+    user_id: number;
+    test_id: number;
+    test_score: number;
+    completed_at: string;
+    test_title: string;
+    test_description: string;
+    creator_username: string;
+  }>;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+  };
+}> => {
+  try {
+    const response = await apiClient.get(`/test-responses/completed/list?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      return Promise.reject(error.response.data);
+    }
+    console.error("[API] Tamamlanan testler alınırken hata:", error);
+    return Promise.reject(error);
+  }
+};
+
+// Gelişmiş test cevabı gönderme (duplicate check ile)
+export const submitTestResponseEnhanced = async (testId: number, responses: TestResponse[]): Promise<TestResult> => {
+  try {
+    const response = await apiClient.post<TestResult>(`/test-responses/${testId}/submit`, { responses });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const errorData = error.response.data;
+      if (errorData.alreadyCompleted) {
+        throw new Error('Bu test daha önce tamamlanmış.');
+      }
+      return Promise.reject(errorData);
+    }
+    console.error("[API] Test cevapları gönderilirken hata:", error);
+    return Promise.reject(error);
+  }
+};
+
+// Eşleşme sistemi için yakın puanlı kullanıcıları getir
+export const getMatchedUsers = async (): Promise<MatchedUser[]> => {
+  try {
+    const response = await apiClient.get('/users/matched');
+    return response.data;
+  } catch (error: any) {
+    console.error('Eşleşen kullanıcılar getirilirken hata:', error);
+    
+    if (error.response?.status === 404) {
+      // Eşleşen kullanıcı bulunamadı durumu
+      return [];
+    }
+    
+    throw new Error(error.response?.data?.message || 'Eşleşen kullanıcılar alınamadı');
+  }
 };
 
 export default apiClient;

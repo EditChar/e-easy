@@ -48,7 +48,7 @@ const AppNavigator = ({ setIsAuthenticated }: AppNavigatorProps) => {
   }, [setIsAuthenticated]);
 
   // Modal'ın gösterilip gösterilmeyeceğini belirleyen koşul
-  const isModalVisible = user ? (!user.residenceCountry || !user.residenceCity || !user.languages || user.languages.length === 0) : false;
+  const isModalVisible = user ? (!user.residence_country || !user.residence_city || !user.languages || user.languages.length === 0) : false;
 
   if (isLoading) {
     return <SplashScreen />;

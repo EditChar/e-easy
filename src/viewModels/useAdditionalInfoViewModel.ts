@@ -72,8 +72,8 @@ export const useAdditionalInfoViewModel = ({ onClose }: AdditionalInfoViewModelP
         setError(null);
         try {
             const profileData: UserProfileUpdateData = {
-                residenceCountry: residenceCountry,
-                residenceCity: residenceCity,
+                residence_country: residenceCountry,
+                residence_city: residenceCity,
                 languages: selectedLanguages,
                 height: heightNum,
                 weight: weightNum,

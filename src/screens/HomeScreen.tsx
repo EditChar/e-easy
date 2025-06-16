@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Button, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Button, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppStackParamList } from '../navigation/AppNavigator';
-import { getTests } from '../api/apiClient';
-import { User } from '../types/auth';
+import { getAvailableTests } from '../api/apiClient';
+import { User, MatchedUser } from '../types/auth';
+import { useMatchViewModel } from '../viewModels/useMatchViewModel';
 
 // Test verisi için tip tanımı (API yanıtına göre güncellenebilir)
 interface Test {
@@ -30,11 +31,20 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh için
 
+  // Eşleşme sistemi için ViewModel
+  const {
+    matchedUsers,
+    isLoading: isMatchLoading,
+    error: matchError,
+    isRefreshing: isMatchRefreshing,
+    onRefresh: onMatchRefresh,
+  } = useMatchViewModel();
+
   const fetchTests = async () => {
     try {
       setError(null);
-      // setIsLoading(true); // setRefreshing zaten yükleme durumunu belirtiyor
-      const fetchedTests = await getTests(); // API'den testleri çek
+      // API'den sadece kullanıcının tamamlamadığı testleri çek
+      const fetchedTests = await getAvailableTests();
       setTests(fetchedTests || []); // API yanıtı undefined ise boş array ata
     } catch (err: any) {
       console.error("Testleri çekerken hata:", err);
@@ -46,7 +56,8 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     }
   };
 
-  // Ekran her focuslandığında testleri yeniden yükle (opsiyonel, ama test tamamlandıktan sonra listeyi güncellemek için iyi)
+  // Ekran her focuslandığında testleri yeniden yükle 
+  // Test tamamlandıktan sonra geri dönüldüğünde testler otomatik refresh olacak
   useFocusEffect(
     useCallback(() => {
       setIsLoading(true); // Her focuslandığında yükleme göstergesini başlat
@@ -81,41 +92,88 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     );
   }
 
-  // TODO: İleride, tüm testler tamamlanmışsa eşleşme listesini göster
-  // const allTestsCompleted = false; // Bu durum API'den gelen veriye göre belirlenecek
-  // const matchedUsers = [
-  //   { id: 'user1', name: 'Ayşe K.', score: '850' },
-  // ];
+  // Aktif test varsa test listesi, yoksa eşleşme listesi göster
+  const showMatchedUsers = tests.length === 0 && !isLoading && !error;
+
+  const renderMatchedUser = ({ item }: { item: MatchedUser }) => (
+    <View style={styles.matchItemContainer}>
+      <Image
+        source={
+          item.avatarUrl
+            ? { uri: item.avatarUrl }
+            : item.id % 2 === 0
+            ? require('../assets/images/female.jpg')
+            : require('../assets/images/male.jpg')
+        }
+        style={styles.matchAvatar}
+      />
+      <View style={styles.matchInfo}>
+        <Text style={styles.matchName}>{item.first_name} {item.last_name.charAt(0)}.</Text>
+        <Text style={styles.matchDetails}>{item.age} yaşında • {item.completed_tests_count} test tamamlandı</Text>
+        <Text style={styles.matchScore}>Toplam Puan: {item.total_score}</Text>
+      </View>
+      <View style={styles.scoreDiffContainer}>
+        <Text style={styles.scoreDiffLabel}>Fark</Text>
+        <Text style={styles.scoreDiffValue}>
+          {item.scoreDifference > 0 ? '+' : ''}{item.scoreDifference}
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Örnek: Kullanıcı adını gösterme */}
-      {/* <Text style={styles.welcomeText}>Hoş geldin, {user?.firstName || 'Kullanıcı'}!</Text> */}
-      {tests.length === 0 && !isLoading ? (
-        <View style={styles.centeredContainer}>
-          <Text style={styles.noTestsText}>Aktif testiniz bulunmuyor.</Text>
-          <Button title="Testleri Yenile" onPress={fetchTests} />
-          {/* TODO: Yeni test oluşturma veya başka bir aksiyon butonu eklenebilir */}
-        </View>
+      {showMatchedUsers ? (
+        // Eşleşme listesi göster
+        isMatchLoading ? (
+          <View style={styles.centeredContainer}>
+            <ActivityIndicator size="large" color="#1e88e5" />
+            <Text style={styles.loadingText}>Eşleşen kullanıcılar yükleniyor...</Text>
+          </View>
+        ) : matchError ? (
+          <View style={styles.centeredContainer}>
+            <Text style={styles.errorText}>{matchError}</Text>
+            <Button title="Yeniden Dene" onPress={onMatchRefresh} />
+          </View>
+        ) : (
+          <FlatList
+            data={matchedUsers}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderMatchedUser}
+            ListHeaderComponent={<Text style={styles.header}>Size Yakın Puanlı Kullanıcılar</Text>}
+            refreshControl={
+              <RefreshControl
+                refreshing={isMatchRefreshing}
+                onRefresh={onMatchRefresh}
+                colors={["#1e88e5"]}
+              />
+            }
+            contentContainerStyle={matchedUsers.length === 0 ? styles.emptyListContent : {}}
+            ListEmptyComponent={
+              <View style={styles.centeredContainer}>
+                <Text style={styles.noTestsText}>Henüz eşleşen kullanıcı bulunamadı.</Text>
+              </View>
+            }
+          />
+        )
       ) : (
+        // Test listesi göster
         <FlatList
           data={tests}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.testItemContainer}>
               <Text style={styles.testName}>{item.title}</Text>
-              {/* İlerleme yüzdesi kaldırıldı */}
               <Button title="Başla" onPress={() => handleStartTest(item.id, item.title)} color="#4caf50" />
             </View>
           )}
           ListHeaderComponent={<Text style={styles.header}>Aktif Testleriniz</Text>}
-          refreshControl={ // Pull-to-refresh özelliği
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#1e88e5"]}/>
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#1e88e5"]} />
           }
           contentContainerStyle={tests.length === 0 ? styles.emptyListContent : {}}
         />
       )}
-      {/* Eşleşen kullanıcılar listesi (allTestsCompleted true ise) buraya eklenebilir */}
     </View>
   );
 };
@@ -184,6 +242,67 @@ const styles = StyleSheet.create({
     flexGrow: 1, // Eğer liste boşsa ortalamak için
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Eşleşme sistemi stilleri
+  matchItemContainer: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    marginVertical: 6,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  matchAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+  },
+  matchInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  matchName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  matchDetails: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  matchScore: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1e88e5',
+  },
+  scoreDiffContainer: {
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  scoreDiffLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 2,
+  },
+  scoreDiffValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
 });
 

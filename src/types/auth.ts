@@ -6,14 +6,14 @@ export interface User {
     id: number;
     username: string;
     email: string;
-    firstName: string;
-    lastName: string;
+    first_name: string;
+    last_name: string;
     age: number;
     country: string;
     role: string;
     gender?: 'male' | 'female';
-    residenceCountry?: string | null;
-    residenceCity?: string | null;
+    residence_country?: string | null;
+    residence_city?: string | null;
     languages?: string[] | null;
     height?: number | null;
     weight?: number | null;
@@ -44,8 +44,8 @@ export type SignUpData = Omit<User, 'id' | 'role'> & {
  * Kullanıcının ek bilgilerini güncellemek için kullanılan veri tipi.
  */
 export interface UserProfileUpdateData {
-    residenceCountry?: string;
-    residenceCity?: string;
+    residence_country?: string;
+    residence_city?: string;
     languages?: string[];
     height?: number;
     weight?: number;
@@ -103,17 +103,20 @@ export interface UserTestHistory {
   };
 }
 
-export interface LeaderboardEntry {
-  user_id: number;
-  total_score: number;
-  completed_tests_count: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-}
-
 export interface UserRank {
   rank: number | null;
   total_score: number;
   completed_tests_count: number;
+}
+
+// Eşleşme sistemi için type
+export interface MatchedUser {
+  id: number;
+  first_name: string;
+  last_name: string;
+  total_score: number;
+  completed_tests_count: number;
+  avatarUrl?: string | null;
+  age: number;
+  scoreDifference: number; // Kullanıcının kendi puanı ile arasındaki fark
 } 

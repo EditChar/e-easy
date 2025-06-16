@@ -12,8 +12,7 @@ import {
   Platform,
   Modal,
   SafeAreaView,
-  TextInput,
-  RefreshControl
+  TextInput
 } from 'react-native';
 import { clearTokens } from '../utils/authStorage';
 import { User } from '../types/auth';
@@ -24,7 +23,7 @@ import { uploadAvatar, updateUserProfile } from '../api/apiClient';
 import DropDownPicker from 'react-native-dropdown-picker';
 import countriesData from '../constants/countries.json';
 import languagesData from '../constants/languages.json';
-import { useProfileViewModel } from '../viewModels/useProfileViewModel';
+
 
 const MALE_DEFAULT_AVATAR = require('../assets/images/male.jpg');
 const FEMALE_DEFAULT_AVATAR = require('../assets/images/female.jpg');
@@ -54,15 +53,7 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
   const [isViewerVisible, setIsViewerVisible] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-  // Test puanlama sistemi ViewModel'i
-  const {
-    stats,
-    recentTests,
-    isLoading: isScoreLoading,
-    isRefreshing,
-    onRefresh,
-    formatDate,
-  } = useProfileViewModel();
+  // Test puanlama sistemi ViewModel'i kaldırıldı - artık kullanılmıyor
   
   // Edit modals state
   const [countryModalVisible, setCountryModalVisible] = useState(false);
@@ -202,14 +193,14 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
 
   // Edit handlers
   const handleEditCountry = () => {
-    setEditResidenceCountry(user?.residenceCountry || null);
-    setEditResidenceCity(user?.residenceCity || null);
+    setEditResidenceCountry(user?.residence_country || null);
+    setEditResidenceCity(user?.residence_city || null);
     setCountryModalVisible(true);
   };
 
   const handleEditCity = () => {
-    setEditResidenceCountry(user?.residenceCountry || null);
-    setEditResidenceCity(user?.residenceCity || null);
+    setEditResidenceCountry(user?.residence_country || null);
+    setEditResidenceCity(user?.residence_city || null);
     setCityModalVisible(true);
   };
 
@@ -241,10 +232,10 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
     
     setEditLoading(true);
     try {
-      const updatedUser = await updateUserProfile({
-        residenceCountry: editResidenceCountry,
-        residenceCity: editResidenceCity
-      });
+              const updatedUser = await updateUserProfile({
+          residence_country: editResidenceCountry,
+          residence_city: editResidenceCity
+        });
       updateUser(updatedUser);
       Alert.alert('Başarılı', 'Yaşadığınız ülke ve şehir güncellendi.');
       setCountryModalVisible(false);
@@ -264,9 +255,9 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
     
     setEditLoading(true);
     try {
-      const updatedUser = await updateUserProfile({
-        residenceCity: editResidenceCity
-      });
+              const updatedUser = await updateUserProfile({
+          residence_city: editResidenceCity
+        });
       updateUser(updatedUser);
       Alert.alert('Başarılı', 'Yaşadığınız şehir güncellendi.');
       setCityModalVisible(false);
@@ -365,15 +356,7 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
   };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={onRefresh}
-        />
-      }
-    >
+    <ScrollView style={styles.container}>
         <View style={styles.headerContainer}>
           <TouchableOpacity onPress={user.avatarUrl ? () => setIsViewerVisible(true) : handleChoosePhoto} style={styles.avatarContainer}>
             <Image source={avatarSource} style={styles.avatarImage} />
@@ -382,14 +365,14 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
                 <Text>✏️</Text>
             </TouchableOpacity>
           </TouchableOpacity>
-          <Text style={styles.name}>{`${user.firstName} ${user.lastName}`}</Text>
+          <Text style={styles.name}>{`${user.first_name} ${user.last_name}`}</Text>
           <Text style={styles.email}>{user.email}</Text>
         </View>
         <Text style={styles.header}>Profilim</Text>
         <View style={styles.card}>
             <ProfileInfoRow label="Kullanıcı Adı" value={user.username} />
             <ProfileInfoRow label="E-posta" value={user.email} />
-            <ProfileInfoRow label="İsim" value={`${user.firstName} ${user.lastName}`} />
+            <ProfileInfoRow label="İsim" value={`${user.first_name} ${user.last_name}`} />
             <ProfileInfoRow label="Yaş" value={user.age.toString()} />
             <ProfileInfoRow 
                 label="Cinsiyet" 
@@ -398,65 +381,14 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
             <ProfileInfoRow label="Kayıtlı Ülke" value={user.country} />
         </View>
         <View style={styles.card}>
-            <ProfileInfoRow label="Yaşadığı Ülke" value={user.residenceCountry} onEdit={handleEditCountry} />
-            <ProfileInfoRow label="Yaşadığı Şehir" value={user.residenceCity} onEdit={handleEditCity} />
+            <ProfileInfoRow label="Yaşadığı Ülke" value={user.residence_country} onEdit={handleEditCountry} />
+            <ProfileInfoRow label="Yaşadığı Şehir" value={user.residence_city} onEdit={handleEditCity} />
             <ProfileInfoRow label="Bildiği Diller" value={user.languages?.join(', ')} onEdit={handleEditLanguages} />
             <ProfileInfoRow label="Boy" value={user.height ? `${user.height} cm` : null} onEdit={handleEditHeight} />
             <ProfileInfoRow label="Kilo" value={user.weight ? `${user.weight} kg` : null} onEdit={handleEditWeight} />
         </View>
 
-        {/* Test İstatistikleri Kartı */}
-        <Text style={styles.header}>Test İstatistiklerim</Text>
-        <View style={styles.scoreCard}>
-            {isScoreLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="small" color="#007AFF" />
-                    <Text style={styles.loadingText}>Yükleniyor...</Text>
-                </View>
-            ) : (
-                <>
-                    <View style={styles.scoreHeader}>
-                        <Text style={styles.totalScore}>{stats.totalScore}</Text>
-                        <Text style={styles.scoreLabel}>Toplam Puan</Text>
-                    </View>
-                    <View style={styles.statsRow}>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats.completedTests}</Text>
-                            <Text style={styles.statLabel}>Tamamlanan Test</Text>
-                        </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats.rank || '-'}</Text>
-                            <Text style={styles.statLabel}>Sıralama</Text>
-                        </View>
-                        <View style={styles.statItem}>
-                            <Text style={styles.statValue}>{stats.averageScore}</Text>
-                            <Text style={styles.statLabel}>Ortalama Puan</Text>
-                        </View>
-                    </View>
-                </>
-            )}
-        </View>
 
-        {/* Son Testler */}
-        {recentTests.length > 0 && (
-            <>
-                <Text style={styles.header}>Son Testlerim</Text>
-                <View style={styles.card}>
-                    {recentTests.map((test, index) => (
-                        <View key={index} style={styles.testItem}>
-                            <View style={styles.testInfo}>
-                                <Text style={styles.testTitle}>{test.test_title}</Text>
-                                <Text style={styles.testDate}>{formatDate(test.completed_at)}</Text>
-                            </View>
-                            <View style={styles.testScoreContainer}>
-                                <Text style={styles.testScoreValue}>{test.test_score}</Text>
-                                <Text style={styles.testScoreLabel}>puan</Text>
-                            </View>
-                        </View>
-                    ))}
-                </View>
-            </>
-        )}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutButtonText}>Çıkış Yap</Text>
         </TouchableOpacity>

@@ -41,6 +41,7 @@ const TestScreen = () => {
   } = useTestViewModel({ testId });
 
   const onSubmitSuccess = () => {
+    // Test tamamlandığında ana ekrana dön - useFocusEffect ile otomatik refresh olacak
     navigation.goBack();
   };
 
@@ -80,26 +81,29 @@ const TestScreen = () => {
       </View>
 
       <View style={styles.optionsContainer}>
-        {(currentQuestion?.answers || []).map((answer) => (
-          <TouchableOpacity
-            key={answer.id.toString()}
-            style={[
-              styles.optionButton,
-              selectedAnswers[currentQuestion.id] === answer.id.toString() && styles.selectedOption
-            ]}
-            onPress={() => handleSelectAnswer(currentQuestion.id, answer.id)}
-            disabled={isSubmitting}
-          >
-            <Text 
+        {(currentQuestion?.answers || []).map((answer) => {
+          const isSelected = selectedAnswers[currentQuestion.id] === answer.id.toString();
+          return (
+            <TouchableOpacity
+              key={answer.id.toString()}
               style={[
-                styles.optionText,
-                selectedAnswers[currentQuestion.id] === answer.id.toString() && styles.selectedOptionText
+                styles.optionButton,
+                isSelected && styles.selectedOption
               ]}
+              onPress={() => handleSelectAnswer(currentQuestion.id, answer.id)}
+              disabled={isSubmitting}
             >
-              {answer.answer_text}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text 
+                style={[
+                  styles.optionText,
+                  isSelected && styles.selectedOptionText
+                ]}
+              >
+                {answer.answer_text}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={styles.navigationButtons}>
@@ -115,6 +119,11 @@ const TestScreen = () => {
               const result = await handleSubmitTest();
               if (result) {
                 onSubmitSuccess();
+              } else {
+                // Test zaten tamamlanmışsa da geri dön
+                setTimeout(() => {
+                  onSubmitSuccess();
+                }, 1000);
               }
             }} 
             disabled={isSubmitting || !selectedAnswers[currentQuestion.id]}
@@ -191,24 +200,33 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     backgroundColor: '#ffffff',
-    paddingVertical: 15,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedOption: {
-    backgroundColor: '#1e88e5',
+    backgroundColor: '#f3f8ff',
     borderColor: '#1e88e5',
+    borderWidth: 3,
+    shadowOpacity: 0.2,
+    elevation: 4,
   },
   optionText: {
     fontSize: 16,
     color: '#333',
+    lineHeight: 22,
   },
   selectedOptionText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: '#1e88e5',
+    fontWeight: '600',
   },
   navigationButtons: {
     flexDirection: 'row',
