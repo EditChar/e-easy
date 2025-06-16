@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import MainTabNavigator, { MainTabParamList } from './MainTabNavigator';
 import TestScreen from '../screens/TestScreen';
+import MatchDetailsScreen from '../screens/MatchDetailsScreen';
 import AdditionalInfoModal from '../components/AdditionalInfoModal';
 import { getMe } from '../api/apiClient';
 import { User } from '../types/auth';
@@ -11,6 +12,7 @@ import SplashScreen from '../screens/SplashScreen';
 export type AppStackParamList = {
   MainTabs: { screen: keyof MainTabParamList, params?: any }; // MainTabNavigator'a yönlendirme için
   Test: { testId: string; testName?: string }; // TestScreen için parametreler tanımlandı
+  MatchDetails: { matchUserId: number; matchUser?: any }; // MatchDetailsScreen için parametreler
   // Eğer App seviyesinde başka stack ekranları olacaksa buraya eklenebilir (örn: Modal ekranlar)
 };
 
@@ -77,6 +79,14 @@ const AppNavigator = ({ setIsAuthenticated }: AppNavigatorProps) => {
             title: route.params?.testName || 'Test Çözülüyor',
             headerShown: true,
           })} 
+        />
+        <Stack.Screen 
+          name="MatchDetails" 
+          component={MatchDetailsScreen} 
+          options={{ 
+            title: 'Eşleşme Detayları',
+            headerShown: true,
+          }} 
         />
         {/* SettingsScreen kaldırıldı. Çıkış işlemi ProfileScreen içinde olacak. */}
         {/* İleride App seviyesinde (tabların dışında) gösterilecek ekranlar buraya eklenebilir */}

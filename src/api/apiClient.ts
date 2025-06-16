@@ -445,20 +445,87 @@ export const submitTestResponseEnhanced = async (testId: number, responses: Test
   }
 };
 
-// Eşleşme sistemi için yakın puanlı kullanıcıları getir
-export const getMatchedUsers = async (): Promise<MatchedUser[]> => {
+// Eşleşme uygunluğunu kontrol et
+export const checkMatchingEligibility = async (): Promise<{
+  is_eligible: boolean;
+  completed_tests: number;
+  total_tests: number;
+  remaining_tests: number;
+  total_score: number;
+  message: string;
+}> => {
   try {
-    const response = await apiClient.get('/users/matched');
+    const response = await apiClient.get('/matches/eligibility');
+    return response.data;
+  } catch (error: any) {
+    console.error('Eşleşme uygunluğu kontrol edilirken hata:', error);
+    throw new Error(error.response?.data?.message || 'Uygunluk kontrolü başarısız');
+  }
+};
+
+// Eşleşme sistemi için yakın puanlı ve karşı cinsten kullanıcıları getir
+export const getMatchedUsers = async (): Promise<{
+  message: string;
+  user_info: {
+    total_score: number;
+    completed_tests: number;
+    total_available_tests: number;
+  };
+  matches: MatchedUser[];
+  matches_count: number;
+}> => {
+  try {
+    // Backend'den kullanıcının cinsiyetine göre karşı cinsten ve 
+    // en yakın puanlı kullanıcıları rastgele sırayla getirir
+    const response = await apiClient.get('/matches');
     return response.data;
   } catch (error: any) {
     console.error('Eşleşen kullanıcılar getirilirken hata:', error);
     
     if (error.response?.status === 404) {
       // Eşleşen kullanıcı bulunamadı durumu
-      return [];
+      return {
+        message: 'Eşleşme bulunamadı',
+        user_info: { total_score: 0, completed_tests: 0, total_available_tests: 0 },
+        matches: [],
+        matches_count: 0
+      };
     }
     
     throw new Error(error.response?.data?.message || 'Eşleşen kullanıcılar alınamadı');
+  }
+};
+
+// Eşleşme detaylarını getir
+export const getMatchDetails = async (matchUserId: number): Promise<{
+  match_user: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+    age?: number;
+    residence_country?: string;
+    residence_city?: string;
+    gender?: string;
+    avatarUrl?: string;
+    languages?: string[];
+    height?: number;
+    weight?: number;
+    total_score: number;
+    completed_tests_count: number;
+  };
+  compatibility: {
+    score_difference: number;
+    compatibility_percentage: number;
+    your_score: number;
+  };
+}> => {
+  try {
+    const response = await apiClient.get(`/matches/details/${matchUserId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Eşleşme detayları getirilirken hata:', error);
+    throw new Error(error.response?.data?.message || 'Eşleşme detayları getirilemedi');
   }
 };
 

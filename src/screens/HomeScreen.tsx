@@ -38,6 +38,7 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     error: matchError,
     isRefreshing: isMatchRefreshing,
     onRefresh: onMatchRefresh,
+    userScore,
   } = useMatchViewModel();
 
   const fetchTests = async () => {
@@ -95,31 +96,64 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
   // Aktif test varsa test listesi, yoksa eşleşme listesi göster
   const showMatchedUsers = tests.length === 0 && !isLoading && !error;
 
-  const renderMatchedUser = ({ item }: { item: MatchedUser }) => (
-    <View style={styles.matchItemContainer}>
-      <Image
-        source={
-          item.avatarUrl
-            ? { uri: item.avatarUrl }
-            : item.id % 2 === 0
-            ? require('../assets/images/female.jpg')
-            : require('../assets/images/male.jpg')
-        }
-        style={styles.matchAvatar}
-      />
-      <View style={styles.matchInfo}>
-        <Text style={styles.matchName}>{item.first_name} {item.last_name.charAt(0)}.</Text>
-        <Text style={styles.matchDetails}>{item.age} yaşında • {item.completed_tests_count} test tamamlandı</Text>
-        <Text style={styles.matchScore}>Toplam Puan: {item.total_score}</Text>
-      </View>
-      <View style={styles.scoreDiffContainer}>
-        <Text style={styles.scoreDiffLabel}>Fark</Text>
-        <Text style={styles.scoreDiffValue}>
-          {item.scoreDifference > 0 ? '+' : ''}{item.scoreDifference}
-        </Text>
-      </View>
-    </View>
-  );
+  const renderMatchedUser = ({ item }: { item: MatchedUser }) => {
+    const navigateToMatchDetails = () => {
+      navigation.navigate('MatchDetails', { 
+        matchUserId: item.id,
+        matchUser: item 
+      });
+    };
+    // Avatar seçimi - önce kendi avatar'ı, yoksa cinsiyete göre varsayılan
+    const getGenderBasedAvatar = () => {
+      if (item.avatarUrl) {
+        return { uri: item.avatarUrl };
+      }
+      // Backend'den gelen cinsiyet bilgisine göre avatar seçimi
+      return item.gender === 'female' 
+        ? require('../assets/images/female.jpg')
+        : require('../assets/images/male.jpg');
+    };
+
+    // Cinsiyet emoji'si
+    const getGenderEmoji = () => {
+      return item.gender === 'female' ? '♀️' : '♂️';
+    };
+
+    // Puan farkına göre renk belirleme
+    const getScoreDiffColor = () => {
+      const scoreDiff = item.score_difference || item.scoreDifference;
+      if (scoreDiff <= 50) return '#4caf50'; // Yeşil - Çok yakın
+      if (scoreDiff <= 100) return '#ff9800'; // Turuncu - Orta
+      return '#f44336'; // Kırmızı - Uzak
+    };
+
+    return (
+      <TouchableOpacity style={styles.matchItemContainer} onPress={navigateToMatchDetails}>
+        <Image
+          source={getGenderBasedAvatar()}
+          style={styles.matchAvatar}
+        />
+        <View style={styles.matchInfo}>
+          <Text style={styles.matchName}>
+            {getGenderEmoji()} {item.first_name || item.username} {item.last_name ? item.last_name.charAt(0) + '.' : ''}
+          </Text>
+          <Text style={styles.matchDetails}>
+            {item.age ? `${item.age} yaşında` : ''}{item.age && item.completed_tests_count ? ' • ' : ''}{item.completed_tests_count ? `${item.completed_tests_count} test tamamlandı` : ''}
+          </Text>
+          <Text style={styles.matchScore}>Toplam Puan: {item.total_score}</Text>
+        </View>
+        <View style={styles.scoreDiffContainer}>
+          <Text style={styles.scoreDiffLabel}>Puan Farkı</Text>
+          <Text style={[
+            styles.scoreDiffValue,
+            { color: getScoreDiffColor() }
+          ]}>
+            {item.score_difference || item.scoreDifference} puan
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -128,7 +162,7 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
         isMatchLoading ? (
           <View style={styles.centeredContainer}>
             <ActivityIndicator size="large" color="#1e88e5" />
-            <Text style={styles.loadingText}>Eşleşen kullanıcılar yükleniyor...</Text>
+            <Text style={styles.loadingText}>Eşleşmeler yükleniyor...</Text>
           </View>
         ) : matchError ? (
           <View style={styles.centeredContainer}>
@@ -136,43 +170,73 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
             <Button title="Yeniden Dene" onPress={onMatchRefresh} />
           </View>
         ) : (
-          <FlatList
-            data={matchedUsers}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderMatchedUser}
-            ListHeaderComponent={<Text style={styles.header}>Size Yakın Puanlı Kullanıcılar</Text>}
-            refreshControl={
-              <RefreshControl
-                refreshing={isMatchRefreshing}
-                onRefresh={onMatchRefresh}
-                colors={["#1e88e5"]}
-              />
-            }
-            contentContainerStyle={matchedUsers.length === 0 ? styles.emptyListContent : {}}
-            ListEmptyComponent={
-              <View style={styles.centeredContainer}>
-                <Text style={styles.noTestsText}>Henüz eşleşen kullanıcı bulunamadı.</Text>
-              </View>
-            }
-          />
+          // Direkt eşleşme listesini göster - uygunluk kontrolü kaldırıldı
+          <View style={styles.matchesContainer}>
+            <Text style={styles.sectionTitle}>💝 Senin için bulunan eşleşmeler</Text>
+            <Text style={styles.sectionSubtitle}>
+              Toplam puanın: {userScore} • {matchedUsers.length} eşleşme bulundu
+            </Text>
+            <FlatList
+              data={matchedUsers}
+              renderItem={renderMatchedUser}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.listContainer}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isMatchRefreshing}
+                  onRefresh={onMatchRefresh}
+                  colors={['#1e88e5']}
+                />
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>🔍 Henüz eşleşme bulunamadı</Text>
+                  <Text style={styles.emptySubText}>
+                    Daha fazla eşleşme için biraz daha bekleyebilirsin.
+                  </Text>
+                </View>
+              }
+            />
+          </View>
         )
       ) : (
         // Test listesi göster
-        <FlatList
-          data={tests}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.testItemContainer}>
-              <Text style={styles.testName}>{item.title}</Text>
-              <Button title="Başla" onPress={() => handleStartTest(item.id, item.title)} color="#4caf50" />
-            </View>
-          )}
-          ListHeaderComponent={<Text style={styles.header}>Aktif Testleriniz</Text>}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#1e88e5"]} />
-          }
-          contentContainerStyle={tests.length === 0 ? styles.emptyListContent : {}}
-        />
+        <View style={styles.testsContainer}>
+          <Text style={styles.sectionTitle}>📋 Tamamlamanız Gereken Testler</Text>
+          <Text style={styles.sectionSubtitle}>
+            Eşleşme için aşağıdaki testleri tamamlamanız gerekmektedir.
+          </Text>
+          <FlatList
+            data={tests}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.testItem}
+                onPress={() => handleStartTest(item.id, item.title)}
+              >
+                <Text style={styles.testTitle}>{item.title}</Text>
+                <Text style={styles.startTestText}>Teste Başla →</Text>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#1e88e5']}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>🎉 Tüm testler tamamlandı!</Text>
+                <Text style={styles.emptySubText}>
+                  Eşleşmeler için ana ekrana dönebilirsiniz.
+                </Text>
+              </View>
+            }
+          />
+        </View>
       )}
     </View>
   );
@@ -211,6 +275,17 @@ const styles = StyleSheet.create({
     color: '#263238',
     textAlign: 'center',
     marginVertical: 20,
+    paddingHorizontal: 10,
+  },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  subHeader: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
     paddingHorizontal: 10,
   },
   testItemContainer: {
@@ -303,6 +378,79 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+  },
+  userScoreText: {
+    fontSize: 14,
+    color: '#1e88e5',
+    textAlign: 'center',
+    marginTop: 5,
+    fontWeight: '500',
+  },
+  matchesContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#263238',
+    marginBottom: 10,
+  },
+  sectionSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+  },
+  listContainer: {
+    padding: 10,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#555',
+    marginBottom: 10,
+  },
+  emptySubText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  testsContainer: {
+    flex: 1,
+    padding: 20,
+  },
+  testItem: {
+    backgroundColor: '#ffffff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  testTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+  },
+  startTestText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1e88e5',
   },
 });
 

@@ -112,11 +112,68 @@ export interface UserRank {
 // Eşleşme sistemi için type
 export interface MatchedUser {
   id: number;
-  first_name: string;
-  last_name: string;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  age?: number;
+  residence_country?: string;
+  residence_city?: string;
+  gender?: 'male' | 'female';
+  avatarUrl?: string | null;
+  avatar_url?: string; // Backend compatibility
+  languages?: string[];
+  height?: number;
+  weight?: number;
   total_score: number;
   completed_tests_count: number;
-  avatarUrl?: string | null;
-  age: number;
-  scoreDifference: number; // Kullanıcının kendi puanı ile arasındaki fark
+  score_difference: number; // Backend'den gelen puan farkı
+  compatibility_percentage: number; // Uyumluluk yüzdesi
+  scoreDifference: number; // Backward compatibility
+}
+
+// Eşleşme uygunluğu için type
+export interface MatchingEligibility {
+  is_eligible: boolean;
+  completed_tests: number;
+  total_tests: number;
+  remaining_tests: number;
+  total_score: number;
+  message: string;
+}
+
+// Eşleşme response'u için type
+export interface MatchResponse {
+  message: string;
+  user_info: {
+    total_score: number;
+    completed_tests: number;
+    total_available_tests: number;
+  };
+  matches: MatchedUser[];
+  matches_count: number;
+}
+
+// Eşleşme detayları için type
+export interface MatchDetails {
+  match_user: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+    age?: number;
+    residence_country?: string;
+    residence_city?: string;
+    gender?: string;
+    avatarUrl?: string;
+    languages?: string[];
+    height?: number;
+    weight?: number;
+    total_score: number;
+    completed_tests_count: number;
+  };
+  compatibility: {
+    score_difference: number;
+    compatibility_percentage: number;
+    your_score: number;
+  };
 } 
