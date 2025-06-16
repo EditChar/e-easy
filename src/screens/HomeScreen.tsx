@@ -39,6 +39,7 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     isRefreshing: isMatchRefreshing,
     onRefresh: onMatchRefresh,
     userScore,
+    hasActiveTests,
   } = useMatchViewModel();
 
   const fetchTests = async () => {
@@ -63,13 +64,17 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     useCallback(() => {
       setIsLoading(true); // Her focuslandığında yükleme göstergesini başlat
       fetchTests();
-    }, [])
+      // Match sistemi de yenilensin
+      onMatchRefresh();
+    }, [onMatchRefresh])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTests();
-  }, []);
+    // Match sistemi de yenilensin
+    onMatchRefresh();
+  }, [onMatchRefresh]);
 
   const handleStartTest = (testId: string, testName: string) => {
     navigation.navigate('Test', { testId, testName });
@@ -79,7 +84,7 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     return (
       <View style={styles.centeredContainer}>
         <ActivityIndicator size="large" color="#1e88e5" />
-        <Text style={styles.loadingText}>Testler Yükleniyor...</Text>
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
@@ -93,8 +98,11 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     );
   }
 
-  // Aktif test varsa test listesi, yoksa eşleşme listesi göster
-  const showMatchedUsers = tests.length === 0 && !isLoading && !error;
+  // Karar verme mantığı: Önce match sisteminden gelen hasActiveTests'i kontrol et
+  // Eğer ViewModel'dan aktif test bilgisi geliyorsa ona göre karar ver
+  // Fallback olarak da local tests state'ini kullan
+  const shouldShowTests = hasActiveTests || (tests.length > 0);
+  const showMatchedUsers = !shouldShowTests;
 
   const renderMatchedUser = ({ item }: { item: MatchedUser }) => {
     const navigateToMatchDetails = () => {

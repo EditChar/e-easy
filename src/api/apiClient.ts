@@ -480,12 +480,23 @@ export const getMatchedUsers = async (): Promise<{
     const response = await apiClient.get('/matches');
     return response.data;
   } catch (error: any) {
-    console.error('Eşleşen kullanıcılar getirilirken hata:', error);
+    console.log('Eşleşme isteği:', error.response?.status, error.response?.data?.message);
     
     if (error.response?.status === 404) {
       // Eşleşen kullanıcı bulunamadı durumu
       return {
         message: 'Eşleşme bulunamadı',
+        user_info: { total_score: 0, completed_tests: 0, total_available_tests: 0 },
+        matches: [],
+        matches_count: 0
+      };
+    }
+    
+    if (error.response?.status === 400) {
+      // Test tamamlanmamış kullanıcılar için özel durum
+      console.log('Kullanıcının tamamlanmamış testleri var, test listesi gösterilecek');
+      return {
+        message: 'Testlerin tamamlanması gerekiyor',
         user_info: { total_score: 0, completed_tests: 0, total_available_tests: 0 },
         matches: [],
         matches_count: 0
