@@ -477,7 +477,18 @@ export const getMatchedUsers = async (): Promise<{
   try {
     // Backend'den kullanıcının cinsiyetine göre karşı cinsten ve 
     // en yakın puanlı kullanıcıları rastgele sırayla getirir
-    const response = await apiClient.get('/matches');
+    // Ülke filtrelemesi frontend'de yapılacak
+    const url = '/matches';
+    console.log('🔗 Eşleşme API çağrısı:', { url });
+    
+    const response = await apiClient.get(url);
+    
+    console.log('✅ Eşleşme API yanıtı:', {
+      status: response.status,
+      matchesCount: response.data.matches?.length || 0,
+      message: response.data.message
+    });
+    
     return response.data;
   } catch (error: any) {
     console.log('Eşleşme isteği:', error.response?.status, error.response?.data?.message);

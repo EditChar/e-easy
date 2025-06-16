@@ -232,12 +232,16 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
     
     setEditLoading(true);
     try {
-              const updatedUser = await updateUserProfile({
-          residence_country: editResidenceCountry,
-          residence_city: editResidenceCity
-        });
+      const updatedUser = await updateUserProfile({
+        residence_country: editResidenceCountry,
+        residence_city: editResidenceCity
+      });
       updateUser(updatedUser);
-      Alert.alert('Başarılı', 'Yaşadığınız ülke ve şehir güncellendi.');
+      Alert.alert(
+        'Başarılı', 
+        'Yaşadığınız ülke ve şehir güncellendi.\n\nEşleşmeleriniz yeni konumunuza göre güncellenecektir.',
+        [{ text: 'Tamam' }]
+      );
       setCountryModalVisible(false);
     } catch (error) {
       console.error('Country update error:', error);
@@ -255,11 +259,15 @@ const ProfileScreen = ({ user, updateUser, setIsAuthenticated }: ProfileScreenPr
     
     setEditLoading(true);
     try {
-              const updatedUser = await updateUserProfile({
-          residence_city: editResidenceCity
-        });
+      const updatedUser = await updateUserProfile({
+        residence_city: editResidenceCity
+      });
       updateUser(updatedUser);
-      Alert.alert('Başarılı', 'Yaşadığınız şehir güncellendi.');
+      Alert.alert(
+        'Başarılı', 
+        'Yaşadığınız şehir güncellendi.\n\nEşleşmeleriniz yeni konumunuza göre güncellenecektir.',
+        [{ text: 'Tamam' }]
+      );
       setCityModalVisible(false);
     } catch (error) {
       console.error('City update error:', error);

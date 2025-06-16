@@ -40,7 +40,7 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
     onRefresh: onMatchRefresh,
     userScore,
     hasActiveTests,
-  } = useMatchViewModel();
+  } = useMatchViewModel({ user });
 
   const fetchTests = async () => {
     try {
@@ -148,6 +148,11 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
           <Text style={styles.matchDetails}>
             {item.age ? `${item.age} yaşında` : ''}{item.age && item.completed_tests_count ? ' • ' : ''}{item.completed_tests_count ? `${item.completed_tests_count} test tamamlandı` : ''}
           </Text>
+          {(item.residence_country || item.residence_city) && (
+            <Text style={styles.matchLocation}>
+              📍 {item.residence_city ? `${item.residence_city}, ` : ''}{item.residence_country || ''}
+            </Text>
+          )}
           <Text style={styles.matchScore}>Toplam Puan: {item.total_score}</Text>
         </View>
         <View style={styles.scoreDiffContainer}>
@@ -182,6 +187,9 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
           <View style={styles.matchesContainer}>
             <Text style={styles.sectionTitle}>💝 Senin için bulunan eşleşmeler</Text>
             <Text style={styles.sectionSubtitle}>
+              {user?.residence_country ? `${user.residence_country} konumuna göre eşleşmeler` : 'Eşleşmeler'}
+            </Text>
+            <Text style={styles.userScoreInfo}>
               Toplam puanın: {userScore} • {matchedUsers.length} eşleşme bulundu
             </Text>
             <FlatList
@@ -201,7 +209,16 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>🔍 Henüz eşleşme bulunamadı</Text>
                   <Text style={styles.emptySubText}>
-                    Daha fazla eşleşme için biraz daha bekleyebilirsin.
+                    {user?.residence_country 
+                      ? `${user.residence_country} konumunda henüz eşleşme bulunamadı.`
+                      : 'Henüz eşleşme bulunamadı.'
+                    }
+                  </Text>
+                  <Text style={styles.emptySubText}>
+                    Farklı bir konuma taşınırsa eşleşmeleriniz otomatik güncellenecektir.
+                  </Text>
+                  <Text style={styles.emptyHint}>
+                    💡 Profil sayfasından konum bilgilerinizi kontrol edebilirsiniz.
                   </Text>
                 </View>
               }
@@ -459,6 +476,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#1e88e5',
+  },
+  userScoreInfo: {
+    fontSize: 14,
+    color: '#1e88e5',
+    textAlign: 'center',
+    marginTop: 5,
+    fontWeight: '500',
+  },
+  matchLocation: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  emptyHint: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
   },
 });
 

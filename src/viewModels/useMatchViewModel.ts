@@ -1,14 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getMatchedUsers, getMatchDetails, getAvailableTests } from '../api/apiClient';
-import { MatchedUser, MatchingEligibility, MatchResponse, MatchDetails } from '../types/auth';
+import { MatchedUser, MatchingEligibility, MatchResponse, MatchDetails, User } from '../types/auth';
 
-export const useMatchViewModel = () => {
+interface UseMatchViewModelProps {
+  user: User | null;
+}
+
+export const useMatchViewModel = ({ user }: UseMatchViewModelProps = { user: null }) => {
   const [matchedUsers, setMatchedUsers] = useState<MatchedUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userScore, setUserScore] = useState(0);
   const [hasActiveTests, setHasActiveTests] = useState(false);
+
+  // Kullanıcının ülke bilgisini takip et
+  const userCountry = useMemo(() => user?.residence_country, [user?.residence_country]);
 
   const checkActiveTests = useCallback(async () => {
     try {
@@ -43,13 +50,59 @@ export const useMatchViewModel = () => {
     }
 
     try {
+      // Kullanıcının ülke bilgisini API'ye gönderelim
+      console.log('🌍 Eşleşme isteği gönderiliyor:', {
+        userCountry: userCountry,
+        userResidenceCountry: user?.residence_country,
+        userId: user?.id,
+        userName: user?.username
+      });
+      
+      // Backend ülke filtrelemesi yapmadığı için tüm eşleşmeleri al
       const response = await getMatchedUsers();
-      setMatchedUsers(response.matches);
+      
+      console.log('📋 APİ\'den gelen tüm eşleşmeler:', {
+        totalMatches: response.matches.length,
+        allMatches: response.matches.map(m => ({
+          id: m.id,
+          name: m.first_name || m.username,
+          country: m.residence_country,
+          city: m.residence_city
+        }))
+      });
+      
+      // Frontend'de ülke filtrelemesi yap
+      let filteredMatches = response.matches;
+      
+      if (userCountry) {
+        filteredMatches = response.matches.filter(match => 
+          match.residence_country === userCountry
+        );
+        
+        console.log('🔍 Ülke filtrelemesi uygulandı:', {
+          userCountry: userCountry,
+          filteredMatches: filteredMatches.length,
+          filteredUsers: filteredMatches.map(m => ({
+            id: m.id,
+            name: m.first_name || m.username,
+            country: m.residence_country,
+            city: m.residence_city
+          }))
+        });
+      }
+      
+      setMatchedUsers(filteredMatches);
       // Backend'den gelen user_info'yu da saklayabiliriz
       if (response.user_info) {
         setUserScore(response.user_info.total_score);
       }
-      return response;
+      
+      // Response'u filtrelenmiş matches ile güncelleyerek döndür
+      return {
+        ...response,
+        matches: filteredMatches,
+        matches_count: filteredMatches.length
+      };
     } catch (err: any) {
       console.log('Eşleşen kullanıcılar yüklenirken hata:', err.message || err);
       setError('Eşleşmeler yüklenirken bir sorun oluştu. Lütfen tekrar deneyin.');
@@ -59,7 +112,7 @@ export const useMatchViewModel = () => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [checkActiveTests]);
+  }, [checkActiveTests, userCountry]);
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -71,6 +124,14 @@ export const useMatchViewModel = () => {
     setIsLoading(true);
     loadMatchedUsers();
   }, [loadMatchedUsers]);
+
+  // Kullanıcının ülkesi değiştiğinde eşleşmeleri yenile
+  useEffect(() => {
+    if (userCountry) {
+      console.log('Kullanıcının ülkesi değişti:', userCountry, 'Eşleşmeler yenileniyor...');
+      refreshMatches();
+    }
+  }, [userCountry, refreshMatches]);
 
   useEffect(() => {
     refreshMatches();
