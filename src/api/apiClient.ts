@@ -479,15 +479,8 @@ export const getMatchedUsers = async (): Promise<{
     // en yakın puanlı kullanıcıları rastgele sırayla getirir
     // Ülke filtrelemesi frontend'de yapılacak
     const url = '/matches';
-    console.log('🔗 Eşleşme API çağrısı:', { url });
     
     const response = await apiClient.get(url);
-    
-    console.log('✅ Eşleşme API yanıtı:', {
-      status: response.status,
-      matchesCount: response.data.matches?.length || 0,
-      message: response.data.message
-    });
     
     return response.data;
   } catch (error: any) {

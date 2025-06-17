@@ -6,6 +6,7 @@ import { AppStackParamList } from '../navigation/AppNavigator';
 import { getAvailableTests } from '../api/apiClient';
 import { User, MatchedUser } from '../types/auth';
 import { useMatchViewModel } from '../viewModels/useMatchViewModel';
+import FilterModal from '../components/FilterModal';
 
 // Test verisi için tip tanımı (API yanıtına göre güncellenebilir)
 interface Test {
@@ -14,6 +15,12 @@ interface Test {
   // description?: string;
   // questionCount?: number;
   // Diğer olası alanlar
+}
+
+// Filter options interface
+interface FilterOptions {
+  minAge?: number;
+  maxAge?: number;
 }
 
 // Props arayüzü eklendi
@@ -31,15 +38,21 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false); // Pull-to-refresh için
 
+  // Filter modal için state
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+
   // Eşleşme sistemi için ViewModel
   const {
     matchedUsers,
+    allMatches,
+    activeFilters,
     isLoading: isMatchLoading,
     error: matchError,
     isRefreshing: isMatchRefreshing,
     onRefresh: onMatchRefresh,
     userScore,
     hasActiveTests,
+    applyFilters,
   } = useMatchViewModel({ user });
 
   const fetchTests = async () => {
@@ -79,6 +92,313 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
   const handleStartTest = (testId: string, testName: string) => {
     navigation.navigate('Test', { testId, testName });
   };
+
+  // Filter modal fonksiyonları
+  const handleOpenFilterModal = () => {
+    setFilterModalVisible(true);
+  };
+
+  const handleCloseFilterModal = () => {
+    setFilterModalVisible(false);
+  };
+
+  const handleApplyFilters = (filters: FilterOptions) => {
+    applyFilters(filters);
+  };
+
+  // Aktif filtre sayısını hesapla
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (activeFilters.minAge !== undefined || activeFilters.maxAge !== undefined) {
+      count++;
+    }
+    return count;
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#f0f4f7',
+    },
+    centeredContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#333',
+    },
+    errorText: {
+      fontSize: 16,
+      color: 'red',
+      textAlign: 'center',
+      marginBottom: 10,
+    },
+    noTestsText: {
+      fontSize: 18,
+      color: '#555',
+      marginBottom: 15,
+    },
+    header: {
+      fontSize: 26,
+      fontWeight: 'bold',
+      color: '#263238',
+      textAlign: 'center',
+      marginVertical: 20,
+      paddingHorizontal: 10,
+    },
+    headerContainer: {
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    subHeader: {
+      fontSize: 16,
+      color: '#666',
+      textAlign: 'center',
+      marginTop: 5,
+      paddingHorizontal: 10,
+    },
+    testItemContainer: {
+      backgroundColor: '#ffffff',
+      padding: 20,
+      marginVertical: 8,
+      marginHorizontal: 16,
+      borderRadius: 8,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    testName: {
+      fontSize: 18,
+      fontWeight: '500',
+      color: '#333',
+      flex: 1,
+      marginRight: 10,
+    },
+    emptyListContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Eşleşme sistemi stilleri
+    matchItemContainer: {
+      backgroundColor: '#ffffff',
+      padding: 16,
+      marginVertical: 6,
+      marginHorizontal: 16,
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    matchAvatar: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      marginRight: 12,
+    },
+    matchInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    matchName: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: '#333',
+      marginBottom: 4,
+    },
+    matchDetails: {
+      fontSize: 14,
+      color: '#666',
+      marginBottom: 4,
+    },
+    matchScore: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#1e88e5',
+    },
+    scoreDiffContainer: {
+      alignItems: 'center',
+      backgroundColor: '#f5f5f5',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+    },
+    scoreDiffLabel: {
+      fontSize: 12,
+      color: '#666',
+      marginBottom: 2,
+    },
+    scoreDiffValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333',
+    },
+    userScoreText: {
+      fontSize: 14,
+      color: '#1e88e5',
+      textAlign: 'center',
+      marginTop: 5,
+      fontWeight: '500',
+    },
+    matchesContainer: {
+      flex: 1,
+      padding: 20,
+    },
+    sectionTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#263238',
+      marginBottom: 10,
+    },
+    sectionSubtitle: {
+      fontSize: 16,
+      color: '#666',
+      marginBottom: 20,
+    },
+    listContainer: {
+      padding: 10,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontSize: 18,
+      color: '#555',
+      marginBottom: 10,
+    },
+    emptySubText: {
+      fontSize: 16,
+      color: '#666',
+      textAlign: 'center',
+    },
+    testsContainer: {
+      flex: 1,
+      padding: 20,
+    },
+    testItem: {
+      backgroundColor: '#ffffff',
+      padding: 20,
+      marginVertical: 8,
+      marginHorizontal: 16,
+      borderRadius: 8,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    testTitle: {
+      fontSize: 18,
+      fontWeight: '500',
+      color: '#333',
+      flex: 1,
+    },
+    startTestText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#1e88e5',
+    },
+    userScoreInfo: {
+      fontSize: 14,
+      color: '#1e88e5',
+      textAlign: 'center',
+      marginTop: 5,
+      fontWeight: '500',
+    },
+    matchLocation: {
+      fontSize: 14,
+      color: '#666',
+      marginBottom: 4,
+    },
+    emptyHint: {
+      fontSize: 14,
+      color: '#666',
+      textAlign: 'center',
+      marginTop: 5,
+    },
+    locationInfo: {
+      fontSize: 14,
+      color: '#666',
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    // Filter button stilleri
+    headerWithFilter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      marginBottom: 10,
+    },
+    filterButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#1e88e5',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    filterButtonText: {
+      color: '#fff',
+      fontSize: 14,
+      fontWeight: '500',
+      marginLeft: 5,
+    },
+    filterBadge: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      backgroundColor: '#f44336',
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    filterBadgeText: {
+      color: '#fff',
+      fontSize: 10,
+      fontWeight: 'bold',
+    },
+    titleContainer: {
+      flex: 1,
+    },
+  });
 
   if (isLoading && !refreshing) { // İlk yükleme ve refresh değilse
     return (
@@ -185,12 +505,33 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
         ) : (
           // Direkt eşleşme listesini göster - uygunluk kontrolü kaldırıldı
           <View style={styles.matchesContainer}>
-            <Text style={styles.sectionTitle}>💝 Senin için bulunan eşleşmeler</Text>
+            <View style={styles.headerWithFilter}>
+              <View style={styles.titleContainer}>
+                <Text style={styles.sectionTitle}>💝 Senin için bulunan eşleşmeler</Text>
+              </View>
+              <TouchableOpacity style={styles.filterButton} onPress={handleOpenFilterModal}>
+                <Text>🔍</Text>
+                <Text style={styles.filterButtonText}>Filtrele</Text>
+                {getActiveFilterCount() > 0 && (
+                  <View style={styles.filterBadge}>
+                    <Text style={styles.filterBadgeText}>{getActiveFilterCount()}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+            
             <Text style={styles.sectionSubtitle}>
-              {user?.residence_country ? `${user.residence_country} konumuna göre eşleşmeler` : 'Eşleşmeler'}
+              {user?.residence_country && user?.residence_city 
+                ? `${user.residence_city}, ${user.residence_country} konumuna göre eşleşmeler`
+                : user?.residence_country 
+                  ? `${user.residence_country} konumuna göre eşleşmeler`
+                  : 'Eşleşmeler'
+              }
             </Text>
+            
             <Text style={styles.userScoreInfo}>
               Toplam puanın: {userScore} • {matchedUsers.length} eşleşme bulundu
+              {getActiveFilterCount() > 0 ? ` (${allMatches.length} toplam)` : ''}
             </Text>
             <FlatList
               data={matchedUsers}
@@ -209,9 +550,11 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
                 <View style={styles.emptyContainer}>
                   <Text style={styles.emptyText}>🔍 Henüz eşleşme bulunamadı</Text>
                   <Text style={styles.emptySubText}>
-                    {user?.residence_country 
-                      ? `${user.residence_country} konumunda henüz eşleşme bulunamadı.`
-                      : 'Henüz eşleşme bulunamadı.'
+                    {user?.residence_country && user?.residence_city
+                      ? `${user.residence_city}, ${user.residence_country} konumunda henüz eşleşme bulunamadı.`
+                      : user?.residence_country 
+                        ? `${user.residence_country} konumunda henüz eşleşme bulunamadı.`
+                        : 'Henüz eşleşme bulunamadı.'
                     }
                   </Text>
                   <Text style={styles.emptySubText}>
@@ -232,6 +575,14 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
           <Text style={styles.sectionSubtitle}>
             Eşleşme için aşağıdaki testleri tamamlamanız gerekmektedir.
           </Text>
+          {(user?.residence_country || user?.residence_city) && (
+            <Text style={styles.locationInfo}>
+              📍 Testler tamamlandığında {user?.residence_city && user?.residence_country 
+                ? `${user.residence_city}, ${user.residence_country}`
+                : user?.residence_country || user?.residence_city
+              } konumundaki eşleşmelerinizi görebileceksiniz.
+            </Text>
+          )}
           <FlatList
             data={tests}
             renderItem={({ item }) => (
@@ -263,238 +614,16 @@ const HomeScreen = ({ user }: HomeScreenProps) => {
           />
         </View>
       )}
+      
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={handleCloseFilterModal}
+        onApplyFilters={handleApplyFilters}
+        currentFilters={activeFilters}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f0f4f7',
-  },
-  centeredContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333',
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  noTestsText: {
-    fontSize: 18,
-    color: '#555',
-    marginBottom: 15,
-  },
-  header: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#263238',
-    textAlign: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 10,
-  },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  subHeader: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
-    paddingHorizontal: 10,
-  },
-  testItemContainer: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  testName: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#333',
-    flex: 1, // Butonun yanında kalan alanı kaplaması için
-    marginRight: 10, // Butonla arasında boşluk
-  },
-  emptyListContent: {
-    flexGrow: 1, // Eğer liste boşsa ortalamak için
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Eşleşme sistemi stilleri
-  matchItemContainer: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    marginVertical: 6,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  matchAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
-  },
-  matchInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  matchName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  matchDetails: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  matchScore: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1e88e5',
-  },
-  scoreDiffContainer: {
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  scoreDiffLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  scoreDiffValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  userScoreText: {
-    fontSize: 14,
-    color: '#1e88e5',
-    textAlign: 'center',
-    marginTop: 5,
-    fontWeight: '500',
-  },
-  matchesContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#263238',
-    marginBottom: 10,
-  },
-  sectionSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  listContainer: {
-    padding: 10,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#555',
-    marginBottom: 10,
-  },
-  emptySubText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  testsContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  testItem: {
-    backgroundColor: '#ffffff',
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  testTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#333',
-    flex: 1,
-  },
-  startTestText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1e88e5',
-  },
-  userScoreInfo: {
-    fontSize: 14,
-    color: '#1e88e5',
-    textAlign: 'center',
-    marginTop: 5,
-    fontWeight: '500',
-  },
-  matchLocation: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  emptyHint: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-});
 
 export default HomeScreen; 
